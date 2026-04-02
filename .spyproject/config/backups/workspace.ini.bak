@@ -1,0 +1,12 @@
+[workspace]
+restore_data_on_startup = True
+save_data_on_exit = True
+save_history = True
+save_non_project_files = False
+project_type = 'empty-project-type'
+recent_files = ['basic_plot_funcions.py', 'plot_vertical_all.py', 'plot_vertikal_mean_difference.py', 'plot_lidar_range.py', 'project_onto_common_vertical_raso_grid.py']
+
+[main]
+version = 0.2.0
+recent_files = []
+
