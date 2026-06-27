@@ -11,8 +11,9 @@ from PIL import Image
 #%%
 
 # Bilder laden
-image1 = Image.open("bild1.png")
-image2 = Image.open("bild2.png")
+base = r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\plots\PPL_filter"
+image1 = Image.open(base+r"\ppl1200s_wvmr_2024-08-24_timeseries_validrange_filtered.png")
+image2 = Image.open(base+r"\ppl10s_wvmr_2024-08-24_timeseries_validrange_filtered.png")
 
 # Größe der Bilder (wir gehen davon aus, dass sie gleich groß sind)
 width, height = image1.size
@@ -27,15 +28,20 @@ combined_image.paste(image1, (0, 0))
 combined_image.paste(image2, (0, height))
 
 # Neues Bild speichern
-combined_image.save("kombiniert.png")
+combined_image.save(base+r"\kombiniert.png")
+combined_image.show()
 
 
 
 #%% Mehrere Bilder untereinander (z. B. 3 Bilder)
 
 # Liste der Bildpfade
-image_paths = ["bild1.png", "bild2.png", "bild3.png"]
-
+# image_paths = ["bild1.png", "bild2.png", "bild3.png"]
+base = r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\plots\Timeseries"
+image_paths = [base+r"\DA10_wvmr\NewColor_raw\DA10_wvmr_2024-08-24T00_2024-08-24T23_v9.png",
+               base+r"\PPL_20m_wvmr\newcolor_raw\PPLS20m_wvmr_6km_2024-08-24T00_2024-08-25T00_v0.png",
+               base+r"\PPL_10s_wvmr\newcolor_raw\PPLS10s_wvmr_6km_2024-08-24T00_2024-08-25T00_v0.png"
+               ]
 # Bilder laden
 images = [Image.open(path) for path in image_paths]
 
@@ -51,7 +57,8 @@ for i, img in enumerate(images):
     combined_image.paste(img, (0, i * height))
 
 # Speichern
-combined_image.save("kombiniert_vertikal.png")
+combined_image.show()
+combined_image.save(base+"\combined_vertical_2024-08-24_v2.png")
 
 
 

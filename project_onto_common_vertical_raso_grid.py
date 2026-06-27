@@ -18,8 +18,8 @@ dh   = 10    # meter
 da10_wvmr  =  xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\dial_wvmr.nc")
 da10_abs   =  xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\\dial_abs.nc")
 awstations =  xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\stationsdata.nc")
-ppl10s     =  xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\PPL\ppl_10s_filtered_90.0%valid.nc")
-ppl20m     =  xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\PPL\ppl_1200s_filtered_90.0%valid.nc")
+ppl10s     =  xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\PPL\ppl_10s_filtered_50.0%valid.nc")
+ppl20m     =  xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\PPL\ppl_1200s_filtered_75.0%valid.nc")
 rsondes    =  xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\radiosondes.nc")
 
 
@@ -62,12 +62,12 @@ def adjust_data(da10_wvmr, da10_abs, awstations, ppl10s, ppl20m, rsondes):
         
     # --- Move timestamps to the midlle of their averaging period to ensure correct alignment
     
-    # dial['time']    = dial['time']   - np.timedelta64(10, 'm')  # (20min avg)
-    # dialabs['time'] = dialabs['time']- np.timedelta64(150,'s')  # (5min avg)
-    # aws['time']     = aws['time']    - np.timedelta64(5,  'm')  # (10min avg)
-    # rl['time']      = rl['time']     - np.timedelta64(5,  's')  # (10s retrevial)
-    # rl2['time']     = rl2['time']    - np.timedelta64(10, 'm')  # (20min avg)
-    # # rs measures on time stamp in-situ
+    dial['time']    = dial['time']   - np.timedelta64(10, 'm')  # (20min avg)
+    dialabs['time'] = dialabs['time']- np.timedelta64(150,'s')  # (5min avg)
+    aws['time']     = aws['time']    - np.timedelta64(5,  'm')  # (10min avg)
+    rl['time']      = rl['time']     - np.timedelta64(5,  's')  # (10s retrevial)
+    rl2['time']     = rl2['time']    - np.timedelta64(10, 'm')  # (20min avg)
+    # rs measures on time stamp in-situ
     
     
     # --- Align 'height' coordinates with 577 m ASL as ground reference
@@ -522,9 +522,10 @@ def make_dataset(da10_wvmr, da10_abs, awstations, ppl10s, ppl20m, rsondes, dh):
 
     return data
     
+
 data = make_dataset(da10_wvmr, da10_abs, awstations, ppl10s, ppl20m, rsondes, dh)
 
-outpath = fr'C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\1D_notimeshift_vertical_profiles__dh{dh}m.nc'
+outpath = fr'C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\1D_vertical_profiles__dh{dh}m.nc'
 data.to_netcdf(outpath)
 print(f'saved joint dataset to {outpath}')
 dstest = xr.open_dataset(outpath)
@@ -1270,3 +1271,60 @@ print(dstest)
     
 # dstest = xr.open_dataset(outpath2)
 # print(dstest)    
+ 
+#%%
+
+import pandas as pd
+
+def time_to_height(ds, target_height):
+    """Time difference in minutes from launch to reaching target_height."""
+    results = {}
+    for launch in ds.launch.values:
+        da = ds.sel(launch=launch)
+        h = da['height'].values
+        t = da['time'].values
+        
+        # First valid time = launch time
+        valid = ~np.isnan(h)
+        if not valid.any():
+            results[launch] = np.nan
+            continue
+        
+        t_launch = t[valid][0]
+        
+        # First index where height >= target_height
+        above = np.where(h >= target_height)[0]
+        if len(above) == 0:
+            results[launch] = np.nan
+            continue
+        
+        t_target = t[above[0]]
+        results[launch] = (t_target - t_launch) / np.timedelta64(1, 'm')
+    
+    return pd.Series(results, name=f'min_to_{target_height}m')
+
+
+_, _, _, _, _, raso = adjust_data(da10_wvmr, da10_abs, awstations, ppl10s, ppl20m, rsondes)
+
+i=76
+rs = raso.sel(launch=i)
+rs = rs.where(rs.time.notnull(), drop=True)
+
+# Check if PPL measurement available and run respective function
+print("Launch label:", i, 
+      "| Date:", rs.date.values.astype('datetime64[D]'),
+              "| When:", rs.day_night.values, '\n') 
+launchtime  = rs.time.values.min().astype('datetime64[m]')
+    # derive key times from radiosonde
+time_rs0km  = rs.time.values.min() #.astype('M8[ms]').astype(datetime)
+time_rs2km  = rs.time.where(rs.height > 2000,  drop=True).values[0]
+time_rs4km  = rs.time.where(rs.height > 4000,  drop=True).values[0]
+time_rs12km = rs.time.where(rs.height > 12000, drop=True).values[0]
+        
+dt_2km  = time_to_height(raso, 2000)
+dt_4km  = time_to_height(raso, 4000)
+dt_6km  = time_to_height(raso, 6000)
+dt_12km = time_to_height(raso, 12000)
+
+df = pd.DataFrame({'dt_2km_min': dt_2km, 'dt_4km_min': dt_4km, 'dt_6km_min': dt_6km, 'dt_12km_min': dt_12km})
+print(df.describe())

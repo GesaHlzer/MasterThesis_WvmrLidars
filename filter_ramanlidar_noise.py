@@ -16,13 +16,13 @@ import colormaps
 import scipy.ndimage as nd
 from skimage.morphology import remove_small_objects
 from basic_plot_funcions import savefig, grid_edges
-
+from colormaps import cmap_wvmr
 # Define Functions
 def ppl_timeseries(data, var, date, valid_range=None):
     # PPL  2024-8-14 (bzw. 7) - 2024-9-8
     
     fontsize = 18
-    Hmax     = 12 # km 
+    Hmax     = 6 # km 
         
     print(f"\n Making PPL {var} plot...")
     
@@ -33,7 +33,7 @@ def ppl_timeseries(data, var, date, valid_range=None):
     
     if var == 'MR':
         param = data.to_numpy().transpose()
-        par_cmap = 'Blues'
+        par_cmap = cmap_wvmr() #'Blues'
         param_label = 'water vapor mixing ratio (g/kg)'
         vmin=0
         vmax=15
@@ -63,10 +63,11 @@ def ppl_timeseries(data, var, date, valid_range=None):
     # Format Colorbar
     cbar = plt.colorbar(pcm, ax=ax, pad=0.03, extend='neither')
     cbar.ax.tick_params(direction='out', labelsize=fontsize, size=10)
+    cbar.ax.yaxis.set_major_locator(ticker.MultipleLocator(2))
     cbar.set_label(param_label, size=fontsize)
     
     if valid_range is not None:
-        ax.plot(time, valid_range/1000, color='red', linewidth=0.7)
+        ax.plot(time, valid_range/1000, color='r', linewidth=2)
     
     # Format Axes
     ax.set_xlim([start, end])
@@ -137,7 +138,7 @@ def filter_mr(ds, dt):
     apply_mr_threshold                   = 'yes' 
     apply_br_threshold                   = 'yes'
     apply_local_median_outlier_detection = 'no' if dt=='10s' else 'yes'
-    apply_gradient_based_spike_detection = 'no' if dt=='10s' else 'yes'
+    apply_gradient_based_spike_detection = 'yes' #'no' if dt=='10s' else 'yes'
     apply_cleanup_of_isolated_pixels     = 'yes'
     # ------------------------------------------
     mr = ds.wvmr.copy()
@@ -146,7 +147,7 @@ def filter_mr(ds, dt):
         """
         Sets all values below the lower_limit to NaN.
         """
-        lower_limit = 50 # for "1200s"
+        lower_limit = 200# 300 if dt=='10s' else 200
         mr = xr.where(mr.height < lower_limit, np.nan, mr)
         mr = mr.transpose()
         
@@ -173,7 +174,7 @@ def filter_mr(ds, dt):
             # Local median (1min × 375m window in time × height)
             local_med = nd.median_filter(filled, size=(720, 100), mode='nearest')
             #local_med = nd.median_filter(filled, size=(3, 100), mode='nearest')
-            threshold = 10  # g/kg, tune to your noise level
+            threshold = 30  # g/kg, tune to your noise level
         else:
             # Local median (2h x 375 m window in time × height)
             local_med = nd.median_filter(filled, size=(3, 100), mode='nearest')
@@ -195,7 +196,7 @@ def filter_mr(ds, dt):
         """
         if dt == "10s":
             # not using it here: too noisy and inefficient
-            threshold_dt = 10 # g/kg 
+            threshold_dt = 20 # g/kg 
         else:
             threshold_dt = 8 # g/kg
             
@@ -343,7 +344,7 @@ def filter_t(ds, dt):
         Sets all values below 100 m to NaN. Removes the near-range of the LiDAR 
         where the overlap function is not yet complete (overlap region).
         """
-        temp = xr.where(temp.height < 100, np.nan, temp) #meter
+        temp = xr.where(temp.height < 300, np.nan, temp) #meter
         
     temp = temp.transpose()
 
@@ -376,37 +377,39 @@ def filter_br(ds, dt):
 ppl10s = xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\PPL\PPL_10s_gl97m.nc")
 ppl20m = xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\PPL\PPL_1200s_gl97m.nc")
 
-# --- Adjust filter
+#%% --- Adjust filter
 
 # dt = '10s'
 # dt = '1200s'
 # ds = ppl10s.copy() if dt == '10s' else ppl20m.copy()
 
-# date = datetime(2024, 9, 4)
+# date = datetime(2024, 8, 24)
 # start = np.datetime64(date, 'ns') - np.timedelta64(20, 's')
 # end =  np.datetime64(date, 'ns') + np.timedelta64(1, 'D')
 # ds = ds.sel(time=slice(start, end)) 
 
-# #original data
-# br = ds.br
-# mr = ds.wvmr
-# temp = ds.temp
+# # #original data
+# # br = ds.br
+# # mr = ds.wvmr
+# # temp = ds.temp
 
-# # ppl_timeseries(br,'BR', date)
+# # # ppl_timeseries(br,'BR', date)
 # # ppl_timeseries(mr,'MR', date)
-# # ppl_timeseries(temp,'T', date)
+# # # ppl_timeseries(temp,'T', date)
 
-# # # filtered data
-# # br_filtered = filter_br(ds, dt)
-# # ppl_timeseries(br_filtered,'BR', date)
+# # # # filtered data
+# # # br_filtered = filter_br(ds, dt)
+# # # ppl_timeseries(br_filtered,'BR', date)
 
-# t_filtered = filter_t(ds, dt)
-# t_range = max_valid_height(t_filtered, dt, window=200, min_valid_fraction=0.75) #750 m
-# ppl_timeseries(temp,'T', date, valid_range=t_range)
-# ppl_timeseries(t_filtered, 'T', date, valid_range=t_range) 
+# # t_filtered = filter_t(ds, dt)
+# # t_range = max_valid_height(t_filtered, dt, window=200, min_valid_fraction=0.75) #750 m
+# # ppl_timeseries(temp,'T', date, valid_range=t_range)
+# # ppl_timeseries(t_filtered, 'T', date, valid_range=t_range) 
 
+# mr = ds.wvmr
 # mr_filtered = filter_mr(ds, dt)
-# mr_range = max_valid_height(mr_filtered, dt, window=200, min_valid_fraction=0.75) 
+# mr_range = max_valid_height(mr_filtered, dt, window=100, 
+#                             min_valid_fraction=0.75) 
 # ppl_timeseries(mr,'MR', date, valid_range=mr_range)
 # ppl_timeseries(mr_filtered, 'MR', date, valid_range=mr_range)
     
@@ -423,20 +426,55 @@ ppl20m = xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis
 # dstest = xr.open_dataset(rf"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\PPL\ppl_{dt}_filtered.nc")
 # print(dstest)
 
-
-
-
-######################### Plotting ############################################
-min_valid_fraction=0.9
+#%% pure plotting
+# or 
 dt = '10s'
-dt = '1200s'
+# dt = '1200s'
+
+ppl1 = xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\PPL\ppl_10s_filtered_50.0%valid.nc") 
+ppl2 = xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\PPL\ppl_1200s_filtered_75.0%valid.nc") 
+
+ds = ppl1.copy() if dt == '10s' else ppl2.copy()
+mr = ds.wvmr
+mr_filtered = ds.wvmr_filtered
+mr_range = ds.wvmr_max_range
+
+date = datetime(2024, 8, 24)
+print(date.date())
+start =  np.datetime64(date, 'ns') - np.timedelta64(1, 'm')
+end   =  np.datetime64(date, 'ns') + np.timedelta64(1, 'D')
+
+wvmr = mr.sel(time=slice(start, end)) 
+wvmr_filtered = mr_filtered.sel(time=slice(start, end))
+wvmr_range = mr_range.sel(time=slice(start, end))
+
+    # fig=ppl_timeseries(wvmr, var)
+fig1 = ppl_timeseries(wvmr,'MR', date, valid_range=wvmr_range)
+fig2 = ppl_timeseries(wvmr_filtered, 'MR', date, valid_range=wvmr_range)
+    
+    
+folderpath = os.path.join(os.path.dirname(os.getcwd()), "plots", "PPL_filter")
+filename1 = f"ppl{dt}_wvmr_{date.date()}_timeseries_validrange.png"
+filename2 = f"ppl{dt}_wvmr_{date.date()}_timeseries_validrange_filtered.png"
+savefig(fig2, folderpath, filename2)
+savefig(fig1, folderpath, filename1)
+
+
+#%%######################### Plotting ############################################
+
+dt = '10s'
+# dt = '1200s'
 ds = ppl10s.copy() if dt == '10s' else ppl20m.copy()
+min_valid_fraction=0.5 if dt == '10s' else 0.75
+window=100
 # --- wvmr
 
 var =  'MR'
-mr= ds.wvmr
+mr = ds.wvmr
 mr_filtered = filter_mr(ds, dt)
-mr_range = max_valid_height(mr_filtered, dt, window=200, min_valid_fraction=min_valid_fraction, smoothing_10s=6) 
+mr_range = max_valid_height(mr_filtered, dt, window=window, 
+                            min_valid_fraction=min_valid_fraction, 
+                            smoothing_10s=6) 
 
 
 date_beg = datetime(2024, 8, 23)
@@ -444,23 +482,24 @@ date_end = datetime(2024, 9, 8)
 dates = [date_beg+timedelta(days=x) for x in range((date_end-date_beg).days+1)]  
   
 for date in dates:
+    # date = datetime(2024, 8, 31)
     print(date.date())
-    start =  np.datetime64(date, 'ns') 
+    start =  np.datetime64(date, 'ns') - np.timedelta64(1, 'm')
     end   =  np.datetime64(date, 'ns') + np.timedelta64(1, 'D')
     
     
     wvmr = mr.sel(time=slice(start, end)) 
     wvmr_filtered = mr_filtered.sel(time=slice(start, end)) 
-    wvmr_range = max_valid_height(wvmr_filtered, dt, window=200, min_valid_fraction=min_valid_fraction, smoothing_10s=6) 
+    wvmr_range = max_valid_height(wvmr_filtered, dt, window=100, min_valid_fraction=min_valid_fraction, smoothing_10s=6)#6) 
 
-    #fig=ppl_timeseries(wvmr, var)
+    # fig=ppl_timeseries(wvmr, var)
     fig1 = ppl_timeseries(wvmr,'MR', date, valid_range=wvmr_range)
     fig2 = ppl_timeseries(wvmr_filtered, 'MR', date, valid_range=wvmr_range)
     
     
     folderpath = os.path.join(os.path.dirname(os.getcwd()), "plots", "PPL_filter")
-    filename1 = f"ppl{dt}_wvmr_{date.date()}_timeseries_validrange_{min_valid_fraction*100}%in200_.png"
-    filename2 = f"ppl{dt}_wvmr_{date.date()}_timeseries_validrange_filtered_{min_valid_fraction*100}%in200.png"
+    filename1 = f"ppl{dt}_wvmr_{date.date()}_timeseries_validrange_v2_{min_valid_fraction*100}%in{window}.png"
+    filename2 = f"ppl{dt}_wvmr_{date.date()}_timeseries_validrange_v2_filtered_{min_valid_fraction*100}%in{window}.png"
     savefig(fig2, folderpath, filename2)
     savefig(fig1, folderpath, filename1)
 
@@ -470,12 +509,13 @@ for date in dates:
 var =  'T'
 temp = ds.temp
 t_filtered = filter_t(ds, dt)
-t_range = max_valid_height(t_filtered, dt, window=200, min_valid_fraction=min_valid_fraction) 
+t_range = max_valid_height(t_filtered, dt, window=window, 
+                           min_valid_fraction=min_valid_fraction) 
 
 
-date_beg = datetime(2024, 8, 23)
-date_end = datetime(2024, 9, 8)
-dates = [date_beg+timedelta(days=x) for x in range((date_end-date_beg).days+1)]  
+# date_beg = datetime(2024, 8, 23)
+# date_end = datetime(2024, 9, 8)
+# dates = [date_beg+timedelta(days=x) for x in range((date_end-date_beg).days+1)]  
   
 # for date in dates:
 #     print(date.date())

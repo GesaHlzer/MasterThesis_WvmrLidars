@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.colors as mcolors
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from matplotlib import ticker
 
 from colormaps import cmap_bluered16, cmap_adv_seq_mhue_inferno20
 from basic_plot_funcions import savefig, grid_edges
@@ -292,10 +293,10 @@ def plot_sl88_stare(date, start, end):
     
     # ---- specify contour option for velocity variance
     plot_var_contour = 'yes'
-    plot_var_contour = 'no';
+    # plot_var_contour = 'no';
     
-    # contour_threshold = 'intensity';
-    contour_threshold = 'height'
+    contour_threshold = 'intensity';
+    # contour_threshold = 'height'
     contour_threshold = 'none'
     
     cont_vals = [0.05, 0.2, 1.0] # [0.05, 0.2, 1.0]
@@ -367,12 +368,13 @@ def plot_sl88_stare(date, start, end):
     # Axis settings
     # ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))
     # ax.xaxis.set_major_formatter(mdates.DateFormatter('%H'))
-    ax.xaxis.set_major_locator(mdates.MinuteLocator(byminute=[0, 20, 40], interval=1))
+    ax.xaxis.set_major_locator(mdates.MinuteLocator(byminute=[0], interval=1))
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     ax.tick_params(direction='out', labelsize=fontsize)
+    ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.1f'))
 
     ax.set_xlim([start, end])
-    ax.set_ylim([0, 2])
+    ax.set_ylim([0, 2.4])
     
     # Colorbar settings
     cbar = plt.colorbar(pcm, ax=ax, pad=0.02) #, ticks=np.linspace(clim[0], clim[1], N)
@@ -397,7 +399,7 @@ def plot_sl88_stare(date, start, end):
 
     ax.set_ylabel('height (km AGL)', fontsize=fontsize)
     ax.set_xlabel('time (UTC)', fontsize=fontsize)
-    ax.set_title(f"SL88: : {start.astype('datetime64[m]').astype(str)} - {end.astype('datetime64[m]').astype(str)}", fontsize=fontsize)
+    ax.set_title(f"SL88: {start.astype('datetime64[m]').astype(str)} - {end.astype('datetime64[m]').astype(str)}", fontsize=fontsize)
     
     # Background color for NaN values
     ax.set_facecolor([0.9, 0.9, 0.9])
@@ -410,15 +412,15 @@ def plot_sl88_stare(date, start, end):
     return fig
 
  
-date  = datetime(2024, 8, 28)
+date  = datetime(2024, 8, 24)
 ticks = "timewindow"
 fig_size = [15, 7] # [15, 5]
-# start = np.datetime64(date) + np.timedelta64((60*18+30), 'm')
-# end   = np.datetime64(date) + np.timedelta64((60*20+30), 'm')
-start = np.datetime64(date) + np.timedelta64((60*20+50), 'm') #for 28th
-end   = np.datetime64(date) + np.timedelta64((60*22+30), 'm') #for 28th
-# start = np.datetime64(date) + np.timedelta64((60*12+45), 'm') #for 28th
-# end   = np.datetime64(date) + np.timedelta64((60*14+30), 'm') #for 28th
+# start = np.datetime64(date) + np.timedelta64((60*18+35), 'm')
+# end   = np.datetime64(date) + np.timedelta64((60*20+10), 'm')
+start = np.datetime64(date) + np.timedelta64((60*10+10), 'm') #for 28th
+end   = np.datetime64(date) + np.timedelta64((60*16+0), 'm') #for 28th
+# start = np.datetime64(date) + np.timedelta64((60*7+50), 'm') #for 28th
+# end   = np.datetime64(date) + np.timedelta64((60*9+15), 'm') #for 28th
 
 filename = f"SL88_stare_{start.astype('datetime64[h]').astype(str)}_{end.astype('datetime64[h]').astype(str)}.png"
 folderpath = os.path.join(os.path.dirname(os.getcwd()), "plots", "Timeseries", "SL88_stare", "shorttime")

@@ -10,17 +10,13 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib import ticker
 from basic_plot_funcions import savefig, grid_edges
+from colormaps import cmap_wvmr, cmap_wvmr_diff
 
-# data = xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\2D_mereged_data_rl20min__dt1200s_dh10m_hmax6000m.nc")
-data = xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\2D_mereged_data_rl10s__dt60s_dh10m_hmax6000m.nc") 
-
-#date  = np.datetime64("2024-08-24")
-
-def diff_plot_combined(data, date):
+def diff_plot_combined(data_dial, data_ppl, date):
     
     start = date
     end   = date + np.timedelta64(1, 'D')
-    
+
     # dial = xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\dial_wvmr.nc")
     # dial         = dial.sel(time=slice(start, end)) 
     # dial_orig = dial['water_vapor'].where(dial['height'] < dial['water_vapor_max_range']).values.T
@@ -31,42 +27,54 @@ def diff_plot_combined(data, date):
     # ppl_orig  = ppl['wvmr'].where(ppl['height'] < ppl['wvmr_max_range']).values.T
     # t2, h2       = grid_edges(ppl['time'], ppl['height'])
     
-    ds        = data.sel(time=slice(start, end)) 
-    ds_ppl_f  = ds['rl_wvmr_filtered'].where(data['height'] < data['rl_wvmr_maxrange']).values.T
-    ds_da10_f = ds['dial_wvmr']       .where(data['height'] < data['dial_wvmr_maxrange']).values.T
-    diff      = ds_da10_f - ds_ppl_f
-    t, h      = grid_edges(ds['time'], ds['height'])
+    # ds        = data.sel(time=slice(start, end)) 
+    # ds_ppl_f  = ds['rl_wvmr_filtered'].where(data['height'] < data['rl_wvmr_maxrange']).values.T
+    # ds_da10_f = ds['dial_wvmr']       .where(data['height'] < data['dial_wvmr_maxrange']).values.T
     
-    par_cmap  = 'Blues'
-    par_cmap2 = 'PuOr'
+    ds_dial = data_dial.sel(time=slice(start, end))#.values#.T
+    ds_ppl  = data_ppl.sel(time=slice(start, end))#.values#.T
+    
+    t, h      = grid_edges(ds_dial['time'], ds_dial['height'])
+    
+    ds_da10_f = ds_dial.values.T
+    ds_ppl_f  = ds_ppl.values.T
+    diff      = ds_da10_f - ds_ppl_f
+    
+    par_cmap  = cmap_wvmr()#'Blues'
+    par_cmap2 = 'RdBu_r'#cmap_wvmr_diff().reversed()  #'PuRd' #'PiYG_r' #'PRGn_r' #'PuOr'
+    par_cmap2 = plt.get_cmap(par_cmap2).copy()
+    par_cmap2.set_under("darkblue")
+    par_cmap2.set_over("black")
     
     Fontsize  = 19
-    hmax      = 3.5
+    hmax      = 3.1
     endt      = end - np.timedelta64(1, 'ns')
-    
-    
+    vmin,vmax = 0, 14.5
+    vdiff     = 3.5#np.nanmax(abs(diff)) #4
+
     fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, figsize=(18, 5*3))
     
     # 1st subplot (dial)
-    ax1.set_title(f"DIAL: {start.astype('datetime64[m]').astype(str)} - {endt.astype('datetime64[m]').astype(str)}", fontsize=Fontsize)
-    pcm1  = ax1.pcolormesh(t, h, ds_da10_f, shading='flat', cmap=par_cmap, vmin=2, vmax=18)
+    ax1.set_title(f"DA10: {date}", fontsize=Fontsize)
+    pcm1  = ax1.pcolormesh(t, h, ds_da10_f, shading='flat', cmap=par_cmap, vmin=vmin, vmax=vmax)
     cbar1 = plt.colorbar(pcm1, ax=ax1, pad=0.03, norm='log')
     cbar1.set_label(r'wvmr (g kg$^{-1})$', size=Fontsize)
     cbar1.ax.tick_params(direction='out', labelsize=Fontsize)
-    cbar1.ax.yaxis.set_major_locator(ticker.MultipleLocator(3)) 
+    cbar1.ax.yaxis.set_major_locator(ticker.MultipleLocator(2))
+    
     
     # 2st subplot (ppl)
-    ax2.set_title(f"PPL: {start.astype('datetime64[m]').astype(str)} - {endt.astype('datetime64[m]').astype(str)}", fontsize=Fontsize)
-    pcm2  = ax2.pcolormesh(t, h, ds_ppl_f, shading='flat', cmap=par_cmap, vmin=2, vmax=18)
+    ax2.set_title(f"PPLS-10s: {date}", fontsize=Fontsize)
+    pcm2  = ax2.pcolormesh(t, h, ds_ppl_f, shading='flat', cmap=par_cmap, vmin=vmin, vmax=vmax)
     cbar2 = plt.colorbar(pcm2, ax=ax2, pad=0.03, norm='log')
     cbar2.set_label(r'wvmr (g kg$^{-1})$', size=Fontsize)
     cbar2.ax.tick_params(direction='out', labelsize=Fontsize)
-    cbar2.ax.yaxis.set_major_locator(ticker.MultipleLocator(3)) 
+    cbar2.ax.yaxis.set_major_locator(ticker.MultipleLocator(2)) 
     
     # 3st subplot (dial-ppl)
-    ax3.set_title(f"DIAL - PPL: {start.astype('datetime64[m]').astype(str)} - {endt.astype('datetime64[m]').astype(str)}", fontsize=Fontsize)
-    ax3.set_xlabel('time (UTC)', fontsize=Fontsize)
-    pcm3  = ax3.pcolormesh(t, h, diff, shading='flat', cmap=par_cmap2, vmin=-3, vmax=3)                
+    ax3.set_title(f"DIAL - PPLS: {date}", fontsize=Fontsize)
+    # ax3.set_xlabel('time (UTC)', fontsize=Fontsize)
+    pcm3  = ax3.pcolormesh(t, h, diff, shading='flat', cmap=par_cmap2, vmin=-vdiff, vmax=vdiff)                
     cbar3 = plt.colorbar(pcm3, ax=ax3, pad=0.03, norm='log')
     cbar3.set_label(r'Δwvmr (g kg$^{-1})$', size=Fontsize)
     cbar3.ax.tick_params(direction='out', labelsize=Fontsize)
@@ -80,7 +88,7 @@ def diff_plot_combined(data, date):
         
         ax.set_xlim([start, end])
         ax.set_ylim([0, hmax])
-        #ax.set_xlabel('time (UTC)', fontsize=Fontsize)
+        ax.set_xlabel('time (UTC)', fontsize=Fontsize)
         ax.set_ylabel('height (km AGL)', fontsize=Fontsize)
         ax.set_facecolor([0.8, 0.8, 0.8])
     
@@ -89,7 +97,7 @@ def diff_plot_combined(data, date):
     plt.show()
     return fig
     
-def diff_plot_combined_unf(data, date):
+def diff_plot_combined_unfiltered(data, date):
     
     start = date
     end   = date + np.timedelta64(1, 'D')
@@ -105,8 +113,6 @@ def diff_plot_combined_unf(data, date):
     # t2, h2       = grid_edges(ppl['time'], ppl['height'])
     
     ds        = data.sel(time=slice(start, end)) 
-    ds_ppl_f  = ds['rl_wvmr_filtered'].where(data['height'] < data['rl_wvmr_maxrange']).values.T
-    ds_da10_f = ds['dial_wvmr']       .where(data['height'] < data['dial_wvmr_maxrange']).values.T
     diff      = ds_da10_f - ds_ppl_f
     t, h      = grid_edges(ds['time'], ds['height'])
     
@@ -173,32 +179,58 @@ def diff_plot_combined_unf(data, date):
     plt.show()
     return fig
  
+# This part only runs when you execute the file directly:
+if __name__ == "__main__":
+    
+    # data = xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\2D_mereged_data_rl20min__dt1200s_dh10m_hmax6000m.nc")
+    data1 = xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\2D_mereged_data_rl10s__dt60s_dh10m_hmax6000m.nc") 
+    data2 = xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\2D_mereged_data_rl20min__dt1200s_dh10m_hmax6000m.nc") 
+    
+    data, t  = data1.copy(), '20min'
+    date  = np.datetime64("2024-08-24")
+    
+    # # filtered Plot
+    # data_ppl  = data['rl_wvmr_filtered'].where(data['height'] < data['rl_wvmr_maxrange'])#.values.T
+    # data_dial = data['dial_wvmr']       .where(data['height'] < data['dial_wvmr_maxrange'])#.values.T
+    # fig = diff_plot_combined(data_dial, data_ppl, date)
+    # folderpath = r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\plots\LidarComparison"
+    # filename = f"wvmr_diff_timeseries_h10m_t{t}_{date}_newcolor.png"
+    # savefig(fig, folderpath, filename, show=True)
+    
+    dates = [np.datetime64("2024-08-23") + np.timedelta64(x, 'D') for x in range(0, 17)] #17
+    for date in dates: 
+        try:
+            # data = xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\2D_mereged_data_rl20min__dt1200s_dh10m_hmax6000m.nc")
+            # data1 = xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\2D_mereged_data_rl10s__dt60s_dh10m_hmax6000m.nc") 
+            # data2 = xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\2D_mereged_data_rl20min__dt1200s_dh10m_hmax6000m.nc") 
+            
+            # data  = data2.copy()
+            # filtered Plot
+            data_ppl  = data['rl_wvmr_filtered'].where(data['height'] < data['rl_wvmr_maxrange'])#.values.T
+            data_dial = data['dial_wvmr']       .where(data['height'] < data['dial_wvmr_maxrange'])#.values.T
+            fig = diff_plot_combined(data_dial, data_ppl, date)
+            
+            # unfiltered
+            # fig = diff_plot_combined_unfiltered(data, date)
+            
+            folderpath = r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\plots\LidarComparison"
+            filename = f"wvmr_diff_timeseries_h10m_t{t}_{date}_newcolor.png"
+            savefig(fig, folderpath, filename, show=True)
+            
+        except Exception as e:
+            print(f"Error plotting data: {e}")
+            continue
 
-dates = [np.datetime64("2024-08-23") + np.timedelta64(x, 'D') for x in range(0, 17)]
-
-for date in dates: 
-    try:
-        # fig = diff_plot_combined(data, date)
-        fig = diff_plot_combined_unf(data, date)
-        
-        folderpath = r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\plots\LidarComparison"
-        filename = f"wvmr_diff_timeseries_h10m_t10s_{date}.png"
-        savefig(fig, folderpath, filename, show=True)
-        
-    except Exception as e:
-        print(f"Error plotting data: {e}")
-        continue
 
 
-
-#%%
+######################################
 # # timeseries
 # def plot_mr_dial(ax, data, start, end, hmax, Fontsize = 22):
     
 #     print("\n Making da10 mr plot...")
 #     mr_da10 = data.wvmr_dial.to_numpy().transpose()
 
-#     # Extend x (time array) and y (height array) to include first and last edges
+#     # Extend x (time array) and y (heigraht ary) to include first and last edges
 #     time = data['time'].values
 #     heights = data['height']
 #     t, h = grid_edges(time, heights)

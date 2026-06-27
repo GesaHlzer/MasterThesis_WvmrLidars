@@ -51,7 +51,7 @@ def plot_da10_abs(date, fig_size, hmax): # 'wvmr' 'abs'
     fontsize = 22
     # Read data 
     data = xr.open_dataset(r'C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\dial_abs.nc')
-    data = data.rename({'range': 'height'})
+    # data = data.rename({'range': 'height'})
     #data_dial = read_DA10(date_beg, date_end, par)
     
     start =  np.datetime64(date)
@@ -65,12 +65,15 @@ def plot_da10_abs(date, fig_size, hmax): # 'wvmr' 'abs'
     t, h = grid_edges(time, heights)
     
     param = data.beta_att.values.transpose()
-    par_cmap = cmap_abs() #cmap_abs() #'Grays' # 'inferno_r' #cmap_backscatter() # 'twilight_shifted'
-    norm = mcolors.LogNorm(vmin=np.nanmin(data["beta_att"].where(data["beta_att"] > 0)), vmax=np.nanmax(data["beta_att"]))
+    par_cmap = 'Grays'# cmap_abs() #cmap_abs() #'Grays' # 'inferno_r' #cmap_backscatter() # 'twilight_shifted'
+    norm = mcolors.LogNorm(vmin=np.nanmin(data["beta_att"].where(data["beta_att"] > 0)), 
+                           vmax=np.nanmax(data["beta_att"]))
+    norm = mcolors.LogNorm(vmin=1e-8, vmax=5e-6)
+    
     # norm = mcolors.LogNorm(vmin=np.nanmin(param[param > 0]),vmax=np.nanmax(param))
     
-    param_label ='att. vol. backscatter coef. (m$^{-1}$sr$^{-1}$)'
-    ylim =[0, 18]
+    param_label ='att. vol. bsc. coef. (m$^{-1}$sr$^{-1}$)'
+    # ylim =[0, hmax]
     
     # ----  Plot Data  
     fig, ax = plt.subplots(figsize=(fig_size[0], fig_size[1]))
@@ -80,9 +83,9 @@ def plot_da10_abs(date, fig_size, hmax): # 'wvmr' 'abs'
     cbar = plt.colorbar(pcm, ax=ax, pad=0.03, extend='neither', norm='log')
     cbar.ax.tick_params(direction='out', labelsize=fontsize-1, size=10)
     cbar.set_label(param_label, size=fontsize)
-    #cbar.ax.set_yscale("log")
+    cbar.ax.set_yscale("log")
     ax.set_xlim([mdates.date2num(date - timedelta(minutes=3)), mdates.date2num(date + timedelta(days=1))])
-    ax.set_ylim(ylim)
+    # ax.set_ylim(ylim)
     ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H'))
     ax.yaxis.set_major_locator(ticker.MultipleLocator(2))
@@ -102,18 +105,24 @@ def plot_da10_abs(date, fig_size, hmax): # 'wvmr' 'abs'
     return fig
 
 fig_size = [18,6] #[18,6] # [18, 6]
-
-date  = datetime(2024, 8, 28)
 hmax = 18
-# Create date list
 
-date_beg, date_end = datetime(2024, 8, 22), datetime(2024, 9, 8)
-dates = [date_beg + timedelta(days=x) for x in range((date_end - date_beg).days + 1)]
-for date in dates:
+# Create date 
+hmax = 5
+date = datetime(2024, 8, 23)
+data_dial_bs = xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\dial_abs.nc")
 
-    fig = plot_da10_abs(date, fig_size, hmax)
-    filename = f"DA10_abs_{date.strftime('%Y-%m-%d')}.png"
-    folderpath = os.path.join(os.path.dirname(os.getcwd()), "plots", "Timeseries", "DA10_abs")
-    savefig(fig, folderpath, filename)
+# fig = plot_da10_abs(date, fig_size, hmax)
 
-print("done")
+
+# time period
+# date_beg, date_end = datetime(2024, 8, 22), datetime(2024, 9, 8)
+# dates = [date_beg + timedelta(days=x) for x in range((date_end - date_beg).days + 1)]
+# for date in dates:
+
+#     fig = plot_da10_abs(date, fig_size, hmax)
+#     filename = f"DA10_abs_{date.strftime('%Y-%m-%d')}.png"
+#     folderpath = os.path.join(os.path.dirname(os.getcwd()), "plots", "Timeseries", "DA10_abs")
+#     savefig(fig, folderpath, filename)
+
+# print("done")

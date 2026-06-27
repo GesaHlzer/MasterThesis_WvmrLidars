@@ -27,9 +27,6 @@ Hmax          = 3
 path = os.path.join(os.path.dirname(os.getcwd()), 'data', '1d_vertical_profiles.nc')
 data = xr.open_dataset(path)
 
-
-
-
 def plot_vertical_dial_raso(data_sel, Save, Stations, Hmax):   
     
     ds = data_sel.copy()
@@ -53,7 +50,7 @@ def plot_vertical_dial_raso(data_sel, Save, Stations, Hmax):
         valid = ~np.isnan(ds['wvmr_aws']) & ~np.isnan(ds['height_aws'])
         ax.plot(ds['wvmr_aws'].values[valid], ds['height_aws'].values[valid], marker='o', label="AWSs",
                 c='black', linestyle=':', linewidth=2, markersize=8)
-    ax.set_xlabel(r"water vapor mixing ratio (g kg$^{-1}$)", fontsize=Fontsize)
+    ax.set_xlabel(r"wvmr (g kg$^{-1}$)", fontsize=Fontsize)
     ax.set_ylabel("height (km AGL)",                 fontsize=Fontsize)
     ax.tick_params(labelsize=Fontsize)
     ax.set_ylim(0, Hmax)

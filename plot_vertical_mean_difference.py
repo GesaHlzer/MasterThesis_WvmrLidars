@@ -11,17 +11,6 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from basic_plot_funcions import savefig
 
-data = xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\1D_vertical_profiles__dh10m.nc")
-
-ds, daytime = data.sel(launch=data['day_night']== 'night'), 'night'# Night Sondes
-ds, daytime = data.sel(launch=data['day_night'] == 'day')  , 'day'  # Day Sondes
-ds, daytime = data.copy()                                  , 'day&night'                  # All Sondes
-
-lidar_var = 'dial_wvmr' 
-lidar_var = 'rl2_wvmr'
-lidar_var = 'rl2_wvmr_filtered'
-
-hmax=12
 
 def stat_computation(data, lidar_var):
     
@@ -58,7 +47,7 @@ def stat_computation(data, lidar_var):
     
     return stats
 
-def plot_stats(data, stats, daytime):
+def plot_stats(data, stats, lidar_var, daytime):
     
     height = stats['height'].values / 1000  # convert m → km if you prefer, else keep in m
     lidar = 'DA10' if lidar_var=='dial_wvmr' else 'PPL (20 min)'
@@ -90,7 +79,7 @@ def plot_stats(data, stats, daytime):
     
     ax.axvline(0, color='grey', lw=0.8, linestyle=':')
     ax.set_xlabel(r'$\Delta_{wvmr}$ (g kg$^{-1}$)')
-    ax.set_ylabel('height (m AGL)')
+    ax.set_ylabel('height (km AGL)')
     ax.set_xlim(-2, 2)
     #ax.set_ylim(0, 10000)
     ax.grid(alpha=0.3)
@@ -132,14 +121,86 @@ def plot_stats(data, stats, daytime):
     
     return fig
 
-def plot_stats_v2(stats, daytime, hmax):
+def plot_stats_v2(stats, lidar_var, daytime, hmax):
     
     height = stats['height'].values / 1000  # convert m → km if you prefer, else keep in m
-    lidar = 'DA10' if lidar_var=='dial_wvmr' else 'PPL'
+    if lidar_var=='dial_wvmr':
+        lidar = 'DA10' 
+    elif lidar_var=='dial088_wvmr':
+        lidar = 'DA10 0.88' 
+    else:
+        lidar = 'PPLS'
+        
+    Fontsize = 12
     
-    fig, ax = plt.subplots(figsize=(5, 7))
+    fig, ax = plt.subplots(figsize=(5, 7)) #5, 7)
+      
+    
+    # RMSD Λ
+    l10, = ax.plot(stats['rsmd'].values, height, color='black', 
+                   linestyle='-', lw=1.2, label='RMSD')
+    
+    # Mean difference μ
+    l11, = ax.plot(stats['md'].values, height, color='darkred', 
+            lw=1.5, linestyle='--', label='MD')
+    
+    # Shaded envelope: μ ± ε
+    l12 = ax.fill_betweenx( height,
+                     (stats['md'] - stats['std']).values,
+                     (stats['md'] + stats['std']).values,
+                     alpha=0.4, color='indianred', label=r'MD $\pm \sigma$'
+                     )
+    #ax.set_title(f'Deviation ({lidar} - Raso): {daytime} soundings', fontsize=11)
+    #     #ax.set_title(rf'$\Delta$wvmr = wvmr$_{{\mathrm{{{lidar}}}}}$ - wvmr$_{{Raso}}$ {daytime}', fontsize=11)
+
     
     
+    ax.set_xlabel(fr'$\Delta wvmr^{{{lidar}}}_{{{daytime}}}$ (g kg$^{{-1}}$)', fontsize=Fontsize)
+    ax.set_xlim(-2.5, 2.5)
+
+    ax.set_ylabel('height (km AGL)', fontsize=Fontsize)
+    ax.yaxis.set_major_locator(ticker.MaxNLocator(6))
+    ax.set_ylim(0, hmax)
+    #ax2.yaxis.set_major_locator(ticker.MultipleLocator(0.05))
+    ax.grid(alpha=0.3)
+    ax.axvline(0, color='black', lw=0.8, linestyle=':')
+    ax.tick_params(labelsize=Fontsize, size=5)
+
+    # ax.axhline(y=0.200, color='gray', linestyle='-', linewidth=1.3)
+    
+    # --------- N on top x-axis
+    ax2 =  ax.twiny()
+    
+    l2, = ax2.plot(stats['N'].values, height, color='steelblue', 
+                        lw=1.5, alpha=0.6, linestyle='-', label=r'$n$')
+    ax2.set_xlabel(r'$n$',   color='steelblue',      fontsize=Fontsize+1)
+    ax2.tick_params(axis='x', labelcolor='steelblue', labelsize=Fontsize, size=5)
+    ax2.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+    
+    # ax2.set_xlim(0, stats['N'].values.max)
+    
+    # ---------combined legend
+    lines = [l10, l11, l12, l2]
+    labels = [l.get_label() for l in lines]
+    ax.legend(lines, labels, fontsize=Fontsize, loc='upper left')
+
+    fig.tight_layout()    
+    plt.show()
+    
+    return fig
+
+def plot_stats_v3(ax, stats, lidar_var, daytime, hmax=400):
+    
+    height = stats['height'].values  # convert m → km if you prefer, else keep in m
+    if lidar_var=='dial_wvmr':
+        lidar = 'DA10' 
+    elif lidar_var=='dial088_wvmr':
+        lidar = 'DA10 0.88' 
+    else:
+        lidar = 'PPL'
+    
+    fig, ax = plt.subplots(figsize=(6, 3)) #5, 7)
+      
     
     # RMSD Λ
     l10, = ax.plot(stats['rsmd'].values, height,color='black', lw=1.5, label=r'$RMSD$')
@@ -161,33 +222,54 @@ def plot_stats_v2(stats, daytime, hmax):
     ax.axvline(0, color='black', lw=0.8, linestyle=':')
     ax.set_xlabel(fr'$\Delta wvmr^{{{lidar}}}_{{{daytime}}}$ (g kg$^{{-1}}$)', fontsize=11)
     ax.set_ylabel('height (m AGL)', fontsize=11)
-    ax.set_xlim(-2.5, 2.5)
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(50))
+    ax.set_xlim(-5, 6)
     ax.set_ylim(0, hmax)
     ax.tick_params(labelsize=11, size=5)
     #
+    #ax.axhline(y=0.0500, color='gray', linestyle='-', linewidth=1.3)
+    # ax.axhline(y=0.100, color='gray', linestyle='-', linewidth=1.3)
+    # ax.axhline(y=0.150, color='gray', linestyle='-', linewidth=1.3)
+    # ax.axhline(y=0.200, color='gray', linestyle='-', linewidth=1.3)
     
+    # # --------- N on top x-axis
+    # ax2 =  ax.twiny()
     
-    # --------- N on top x-axis
-    ax2 =  ax.twiny()
-    
-    l2, = ax2.plot(stats['N'].values, height, color='steelblue', 
-                        lw=1.5, alpha=0.6, linestyle='-', label='N')
-    ax2.set_xlabel('N', color='steelblue')
-    ax2.tick_params(axis='x', labelcolor='steelblue', labelsize=11, size=5)
+    # l2, = ax2.plot(stats['N'].values, height, color='steelblue', 
+    #                     lw=1.5, alpha=0.6, linestyle='-', label='N')
+    # ax2.set_xlabel('N', color='steelblue')
+    # ax2.tick_params(axis='x', labelcolor='steelblue', labelsize=11, size=5)
     
     # ---------combined legend
-    lines = [l10, l11, l12, l2]
-    labels = [l.get_label() for l in lines]
-    ax.legend(lines, labels, fontsize=10, loc='upper left')
+    # lines = [l10, l11, l12, l2]
+    # labels = [l.get_label() for l in lines]
+    ax.legend(fontsize=10, loc='upper right')
 
     fig.tight_layout()    
     plt.show()
     
     return fig
 
-stats = stat_computation(ds, lidar_var)
-fig = plot_stats_v2(stats, daytime, hmax)
+# This part only runs when you execute the file directly:
+if __name__ == "__main__":
+    
+    hmax=12
+    data = xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\1D_vertical_profiles__dh10m.nc")
 
-filename = f'vertical_bias_{lidar_var}_to{hmax}km_{daytime}.png'
-folderpath = r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\plots\vertical_bias"
-savefig(fig, folderpath, filename, dpi=300, show=True)
+    ds, daytime = data.sel(launch=data['day_night']== 'night'), 'night'# Night Sondes
+    ds, daytime = data.sel(launch=data['day_night'] == 'day')  , 'day'  # Day Sondes
+    ds, daytime = data.copy()                                  , 'day&night'                  # All Sondes
+
+    lidar_var = 'dial_wvmr' 
+    lidar_var = 'rl2_wvmr'
+    lidar_var = 'rl2_wvmr_filtered'
+    
+    stats = stat_computation(ds, lidar_var)
+    fig = plot_stats_v2(stats, lidar_var, daytime, hmax)
+    
+    # plot_stats_v3(stats, lidar_var, daytime)
+
+    filename = f'vertical_bias2_{lidar_var}_to{hmax}km_{daytime}.png'
+    folderpath = r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\plots\vertical_bias"
+    savefig(fig, folderpath, filename, dpi=300, show=True)
+

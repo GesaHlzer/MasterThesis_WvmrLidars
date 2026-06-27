@@ -8,8 +8,137 @@ Created on Thu Mar 20 00:26:55 2025
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
+import matplotlib.colors as mcolors
 
-from colorspace import sequential_hcl, desaturate
+def cmap_wvmr_diff():
+    """Diverging colormap matching the wvmr colormap aesthetic:
+       cyan (negative) ← white (zero) → yellow-orange (positive)"""
+    cmap = np.array([
+        [  0, 210, 210],   # cyan  (most negative)
+        [ 80, 160, 200],   # blue-ish
+        [255, 255, 255],   # white (zero)
+        [255, 220,  80],   # yellow
+        [230, 130,  30],   # orange (most positive)
+    ], dtype=np.float32)
+    cmap /= 255.0
+
+    positions = [0.0, 0.25, 0.5, 0.75, 1.0]
+    return LinearSegmentedColormap.from_list(
+        "wvmr_diff", list(zip(positions, cmap))
+    )
+
+def cmap_wvmr2():
+    cmap_colors = [
+    (0.000,0.345,0.345,0.336),
+    (0.059,0.529,0.521,0.470),
+    (0.118,0.678,0.678,0.514),
+    (0.176,0.800,0.774,0.506),
+    (0.235,0.859,0.828,0.484),
+    (0.294,0.886,0.843,0.425),
+    (0.353,0.918,0.806,0.404),
+    (0.412,0.937,0.730,0.411),
+    (0.471,0.906,0.626,0.462),
+    (0.529,0.863,0.522,0.500),
+    (0.588,0.851,0.441,0.528),
+    (0.647,0.796,0.399,0.576),
+    (0.706,0.729,0.376,0.661),
+    (0.765,0.650,0.412,0.706),
+    (0.824,0.563,0.469,0.749),
+    (0.882,0.463,0.557,0.808),
+    #(0.941,0.379,0.663,0.871),
+    #(0.000,0.282,0.679,0.890),
+    (0.921,0.379,0.663,0.871),
+    (0.980,0.282,0.679,0.890),
+    # --- added white cap ---
+    (0.990, 0.328, 0.779, 1.999),  # fade start (optional)
+    (1.000, 1.000, 1.000, 1.000),  # pure white
+    ]
+
+    # rgb(87, 87, 85)
+    # rgb(134, 132, 119)
+    # rgb(172, 172, 131)
+    # rgb(204, 197, 129)
+    # rgb(219, 211, 123)
+    # rgb(225, 214, 108)
+    # rgb(234, 205, 103)
+    # rgb(238, 186, 104)
+    # rgb(231, 159, 117)
+    # rgb(220, 133, 127)
+    # rgb(217, 112, 134)
+    # rgb(202, 101, 146)
+    # rgb(185, 95, 168)
+    # rgb(165, 105, 180)
+    # rgb(143, 119, 190)
+    # rgb(117, 142, 206)
+    # rgb(96, 169, 222)
+    # rgb(71, 173, 226)
+    positions = [c[0] for c in cmap_colors]
+    rgb_values = [(c[1], c[2], c[3]) for c in cmap_colors]
+     
+    # LinearSegmentedColormap aus den Stützstellen erstellen
+    cmap = mcolors.LinearSegmentedColormap.from_list(
+        "From PPLS website deriveved wvmr colormap setup",
+        list(zip(positions, rgb_values)),
+        N=256
+    )
+    return cmap
+
+def cmap_wvmr3():
+    """Custom colormap: white → yellow → purple → blue → cyan → black"""
+    cmap = np.array([
+        [255, 255, 255],   # white
+        [255, 255,   0],   # yellow
+        [128,  51, 153],   # purple
+        [ 26,  77, 204],   # blue (slightly less dark)
+        [  0, 230, 230],   # cyan (a bit more)
+        [  0,   0,   0],   # black (small top fraction)
+    ], dtype=np.float32)
+    cmap /= 255.0
+ 
+    # Equal spacing except black stays compressed at top
+    positions = [0.0, 0.20, 0.50, 0.75, 0.94, 1.0]
+ 
+    return LinearSegmentedColormap.from_list(
+        "custom", list(zip(positions, cmap))
+    )
+
+def cmap_wvmr():
+    """Custom colormap: white → yellow → purple → blue → cyan → black"""
+    cmap = np.array([
+        [255, 255, 255],   # white
+        [255, 255,   0],   # yellow
+        [128,  51, 153],   # purple
+        [ 26,  77, 204],   # blue
+        [  0, 230, 230],   # cyan
+        [  0,   0,   0],   # black (small top fraction)
+    ], dtype=np.float32)
+    cmap /= 255.0
+ 
+    # Equally spaced positions
+    positions = [0.0, 0.20, 0.40, 0.60, 0.80, 1.0]
+ 
+    return LinearSegmentedColormap.from_list(
+        "custom", list(zip(positions, cmap))
+    )
+
+def cmap_wvmr1():
+    """Custom colormap: white → yellow → purple → blue → cyan → black"""
+    cmap = np.array([
+        [255, 255, 255],   # white
+        [255, 255,   0],   # yellow
+        [128,  51, 153],   # purple
+        [ 26,  77, 204],   # blue
+        [  0, 230, 230],   # cyan
+        [  0,   0,   0],   # black (small top fraction)
+    ], dtype=np.float32)
+    cmap /= 255.0
+ 
+    # Equally spaced positions
+    positions = [0.0, 0.15, 0.45, 0.7, 0.93, 1.0]
+ 
+    return LinearSegmentedColormap.from_list(
+        "custom", list(zip(positions, cmap))
+    )
 
 def cmap_abs():
     colors = [ 
@@ -113,7 +242,6 @@ def cmap_purplebrown40():
                     [0.392, 0.235, 0.075],
                     [0.337, 0.196, 0.035],
                     [0.286, 0.161, 0.000]], dtype=np.float32)
-
     return LinearSegmentedColormap.from_list("purplebrown40", cmap)
 
 def cmap_bluered40():
@@ -495,26 +623,40 @@ def cmap_adv_div_brown_green():
 
     return LinearSegmentedColormap.from_list("adv_div_brown_green", cmap)
 
-
-# # Example usage
-# cmap = cmap_windspeed()
-# cmap = cmap_purplebrown40()
-# cmap = cmap_bluered40()
-# cmap = cmap_bluered16()
-# cmap = cmap_basic_seq_mhue_viridis()
-# cmap = cmap_basic_seq_mhue_terrain2()
-# cmap = cmap_basic_seq_mhue_plasma()
-# cmap = cmap_adv_seq_mhue_inferno23plus1()
-# cmap = cmap_adv_seq_mhue_inferno20()
-# cmap = cmap_adv_seq_mhue_inferno()
-# cmap = cmap_adv_seq_mhue_greens()
-# cmap = cmap_adv_div_green_brown()
-# cmap = cmap_backscatter()
-# cmap =  cmap_adv_div_brown_green()
-
-
-# To visualize the colormap:
-# plt.imshow([np.linspace(0, 1, 256)], aspect='auto', cmap=cmap)
-# plt.imshow([np.linspace(0, 1, 40)], aspect='auto', cmap=cmap)
-# plt.colorbar()
-# plt.show()
+if __name__ == "__main__":
+    # # Example usage
+    # cmap = cmap_windspeed()
+    # cmap = cmap_purplebrown40()
+    # cmap = cmap_bluered40()
+    # cmap = cmap_bluered16()
+    # cmap = cmap_basic_seq_mhue_viridis()
+    # cmap = cmap_basic_seq_mhue_terrain2()
+    # cmap = cmap_basic_seq_mhue_plasma()
+    # cmap = cmap_adv_seq_mhue_inferno23plus1()
+    # cmap = cmap_adv_seq_mhue_inferno20()
+    # cmap = cmap_adv_seq_mhue_inferno()
+    # cmap = cmap_adv_seq_mhue_greens()
+    # cmap = cmap_adv_div_green_brown()
+    # cmap = cmap_backscatter()
+    # cmap =  cmap_adv_div_brown_green()
+    # cmap = cmap_ppls_wvmr()
+    cmap = cmap_wvmr()
+    
+    
+    # --- Beispielplot mit Colorbar ---
+    fig, ax = plt.subplots(figsize=(8, 5))
+     
+    x = np.linspace(0, 2 * np.pi, 300)
+    y = np.linspace(0, 2 * np.pi, 300)
+    X, Y = np.meshgrid(x, y)
+    Z = np.sin(X) * np.cos(Y)
+     
+    im = ax.pcolormesh(X, Y, Z, cmap=cmap, vmin=-1, vmax=1)
+    cbar = fig.colorbar(im, ax=ax)
+    cbar.set_label("Wert")
+    ax.set_title("Beispiel mit custom colormap")
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+     
+    plt.tight_layout()
+    plt.show()

@@ -9,7 +9,7 @@ from basic_plot_funcions import haversine
 
 # ============ Settings for the new dataset ==================================
 
-rltime = '10s' # '10s' '20min' '1200s'      # select PPL dataset
+rltime = '10s'# '10s' # '10s' '20min' '1200s'      # select PPL dataset
 
 hmax = 6000  # meter 4000 12000             # up to which height 
 dh   = 10    # meter
@@ -22,8 +22,8 @@ dt   = 60    # sec
 da10_wvmr  =  xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\dial_wvmr.nc")
 da10_abs   =  xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\\dial_abs.nc")
 awstations =  xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\stationsdata.nc")
-ppl10s     =  xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\PPL\ppl_10s_filtered_90.0%valid.nc")
-ppl20m     =  xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\PPL\ppl_1200s_filtered_90.0%valid.nc")
+ppl10s     =  xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\PPL\ppl_10s_filtered_50.0%valid.nc")
+ppl20m     =  xr.open_dataset(r"C:\Users\alleh\Documents\+Uni_Innsbruck\+MasterThesis\data\PPL\ppl_1200s_filtered_75.0%valid.nc")
 
 
 # Check time-height grids of the different datasets

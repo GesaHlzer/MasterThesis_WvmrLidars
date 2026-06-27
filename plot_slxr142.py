@@ -163,6 +163,19 @@ def plot_slxr142(date, plot_horizontal_lines='no'):
     time = data_slxr142['time'].values
     height = data_slxr142['height']
     
+    
+    ticks = "timewindow"
+    fig_size = [15, 7] # [15, 5]
+    # start = np.datetime64(date) + np.timedelta64((60*18+35), 'm')
+    # end   = np.datetime64(date) + np.timedelta64((60*20+10), 'm')
+    start = np.datetime64(date) + np.timedelta64((60*10+10), 'm') #for 28th
+    end   = np.datetime64(date) + np.timedelta64((60*16+0), 'm') #for 28th
+    # start = np.datetime64(date) + np.timedelta64((60*7+50), 'm') #for 28th
+    # end   = np.datetime64(date) + np.timedelta64((60*9+15), 'm') #for 28th
+    mask = ((data_slxr142.time >= start) & (data_slxr142.time <= end))
+    data_slxr142 = data_slxr142.sel(time=mask)
+    
+    
     # t (time numeric) & h (height in km)
     t, h = grid_edges(time, height)   
 
@@ -209,16 +222,23 @@ def plot_slxr142(date, plot_horizontal_lines='no'):
 
     return fig
 
-date = datetime(2024, 8, 7)    
-
-date_beg, date_end = datetime(2024, 8, 22), datetime(2024, 9, 8)
-dates = [date_beg + timedelta(days=x) for x in range((date_end - date_beg).days + 1)]
-
-for date in dates: 
-    filename = f"SLXR142_{date.strftime('%Y-%m-%d')}.png"
-    folderpath = os.path.join(os.path.dirname(os.getcwd()), "plots", "Timeseries", "SLXR142")
+if __name__ == "__main__":
     
-    fig = plot_slxr142(date, plot_horizontal_lines='no')
-    savefig(fig, folderpath, filename)
+         
+    date  = datetime(2024, 8, 24)
 
-print("done")
+    fig = plot_slxr142(date, plot_horizontal_lines='no')
+    
+#     date = datetime(2024, 8, 7)    
+    
+#     date_beg, date_end = datetime(2024, 8, 22), datetime(2024, 9, 8)
+#     dates = [date_beg + timedelta(days=x) for x in range((date_end - date_beg).days + 1)]
+    
+#     for date in dates: 
+#         filename = f"SLXR142_{date.strftime('%Y-%m-%d')}.png"
+#         folderpath = os.path.join(os.path.dirname(os.getcwd()), "plots", "Timeseries", "SLXR142")
+        
+#         fig = plot_slxr142(date, plot_horizontal_lines='no')
+#         savefig(fig, folderpath, filename)
+    
+#     print("done")
